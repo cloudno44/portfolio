@@ -1,168 +1,895 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sajin Asokan | Creative Director</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #F8F8F6;
-            color: #111111;
-            scroll-behavior: smooth;
-        }
-        .reveal {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.8s ease-out;
-        }
-        .reveal.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sajin Asokan | Creative Director</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lenis@1.3.23/dist/lenis.min.js"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #F8F8F6;
+        color: #111111;
+        overflow-x: hidden;
+    }
+
+    @keyframes scrollTrack {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-33.3333%); }
+    }
+    .animate-scroll { animation: scrollTrack 70s linear infinite; }
+    .gallery-container:hover .animate-scroll { animation-play-state: paused; }
+
+    .stack-item {
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        overflow: hidden;
+        background: #171717;
+        transition: transform 0.6s ease;
+    }
+    .stack-item img, .stack-item video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .stack-item.exit {
+        transition: transform 0.6s ease, opacity 0.6s ease;
+        transform: translateX(120%) rotate(12deg) !important;
+        opacity: 0 !important;
+    }
+
+    @keyframes slowMove {
+        0% { transform: scale(1.05) translate(0, 0); }
+        100% { transform: scale(1.15) translate(-1%, -1%); }
+    }
+    .animate-cinematic {
+        animation: slowMove 35s ease-in-out infinite alternate;
+        animation-play-state: paused;
+    }
+    section.in-view .animate-cinematic {
+        animation-play-state: running;
+    }
+
+    /* Rise + fade in once a section is active */
+    .reveal {
+        opacity: 0;
+        transform: translateY(40px);
+        transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    section.in-view .reveal {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+
+    /* 2D Art overlay gallery */
+    #gallery-2d-overlay, #gallery-ui-overlay, #gallery-ai-overlay, #gallery-channel-overlay {
+        position: fixed;
+        inset: 0;
+        background: #0A0A0A;
+        z-index: 200;
+        overflow-y: auto;
+        display: none;
+    }
+    #gallery-2d-overlay.active, #gallery-ui-overlay.active, #gallery-ai-overlay.active, #gallery-channel-overlay.active { display: block; }
+
+    .masonry {
+        column-count: 1;
+        column-gap: 1rem;
+    }
+    @media (min-width: 640px) { .masonry { column-count: 2; } }
+    @media (min-width: 1024px) { .masonry { column-count: 3; } }
+    .masonry-item {
+        break-inside: avoid;
+        margin-bottom: 1rem;
+        position: relative;
+        overflow: hidden;
+        border-radius: 0.75rem;
+        cursor: zoom-in;
+    }
+    .masonry-item img {
+        width: 100%;
+        display: block;
+        transition: transform 0.6s ease;
+    }
+    .masonry-item:hover img { transform: scale(1.04); }
+
+    #lightbox {
+        position: fixed;
+        inset: 0;
+        background: rgba(5,5,5,0.97);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 210;
+        padding: 2rem;
+    }
+    #lightbox.active { display: flex; }
+    #lightbox img {
+        max-width: 90vw;
+        max-height: 85vh;
+        object-fit: contain;
+        border-radius: 0.5rem;
+    }
+    .lb-btn {
+        position: fixed;
+        top: 50%;
+        transform: translateY(-50%);
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+        padding: 1rem;
+        opacity: 0.6;
+        transition: opacity 0.3s ease;
+        user-select: none;
+    }
+    .lb-btn:hover { opacity: 1; }
+    #lb-close {
+        position: fixed;
+        top: 1.5rem;
+        right: 2rem;
+        color: white;
+        font-size: 1.75rem;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.3s ease;
+    }
+    #lb-close:hover { opacity: 1; }
+
+    /* Video thumbnail grid (AI Showcase / Channel) */
+    .video-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+    @media (min-width: 640px) { .video-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1024px) { .video-grid { grid-template-columns: repeat(3, 1fr); } }
+    .video-item {
+        position: relative;
+        aspect-ratio: 16 / 9;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        cursor: pointer;
+        background: #111;
+    }
+    .video-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.6s ease;
+    }
+    .video-item:hover img { transform: scale(1.05); }
+    .video-item .play-btn {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .video-item .play-btn svg {
+        width: 3.25rem;
+        height: 3.25rem;
+        opacity: 0.9;
+        filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
+        transition: transform 0.3s ease;
+    }
+    .video-item:hover .play-btn svg { transform: scale(1.12); }
+
+    #video-lightbox {
+        position: fixed;
+        inset: 0;
+        background: rgba(5,5,5,0.97);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 210;
+        padding: 2rem;
+    }
+    #video-lightbox.active { display: flex; }
+    #vlb-frame-wrap {
+        width: min(90vw, 1100px);
+        aspect-ratio: 16 / 9;
+    }
+    #vlb-iframe, #vlb-player {
+        width: 100%;
+        height: 100%;
+        border-radius: 0.5rem;
+    }
+    #vlb-close {
+        position: fixed;
+        top: 1.5rem;
+        right: 2rem;
+        color: white;
+        font-size: 1.75rem;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.3s ease;
+    }
+    #vlb-close:hover { opacity: 1; }
+
+    /* Subtle background image behind the Journey and Contact sections */
+    #journey, #contact {
+        position: relative;
+        background-color: #111111;
+    }
+    #journey::before, #contact::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.025;
+        background-image: url('https://images.unsplash.com/photo-1636517807452-6a2cbada5702?q=60&w=900&auto=format&fit=crop');
+        background-size: cover;
+        background-position: center;
+        filter: grayscale(100%);
+        transition: transform 1.8s cubic-bezier(0.16,1,0.3,1);
+    }
+    #journey > *, #contact > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Scroll-triggered reveal: content rises + fades in when its section becomes active */
+    .reveal {
+        opacity: 0;
+        transform: translateY(40px);
+        transition: opacity 1s cubic-bezier(0.16,1,0.3,1), transform 1s cubic-bezier(0.16,1,0.3,1);
+    }
+    section.in-view .reveal {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* Background subtly scales up when its section becomes active */
+    .bg-zoom {
+        transform: scale(1);
+        transition: transform 1.8s cubic-bezier(0.16,1,0.3,1);
+    }
+    section.in-view .bg-zoom {
+        transform: scale(1.06);
+    }
+    section.in-view#journey::before, section.in-view#contact::before {
+        transform: scale(1.06);
+    }
+
+    /* Blinking cursor after "DROP A LINE" */
+    @keyframes blinkCursor {
+        0%, 50% { opacity: 1; }
+        51%, 100% { opacity: 0; }
+    }
+    .blink-cursor {
+        display: inline-block;
+        animation: blinkCursor 1s step-start infinite;
+    }
+
+    /* Contact icon hover tooltip */
+    .contact-icon-label {
+        position: absolute;
+        bottom: -2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        white-space: nowrap;
+    }
+    .contact-icon:hover .contact-icon-label {
+        opacity: 1;
+    }
+</style>
 </head>
-<body class="overflow-x-hidden">
+<body class="pb-24">
 
-    <!-- Navigation -->
-    <nav id="navbar" class="fixed top-0 w-full z-50 transition-all duration-300 px-6 py-6 md:px-12 flex justify-between items-center text-white">
-        <a href="#" class="text-xl font-bold tracking-tight">SAJIN ASOKAN</a>
-        <div class="space-x-8 text-sm font-medium tracking-wide hidden sm:flex">
-            <a href="#work" class="hover:opacity-70 transition">WORK</a>
-            <a href="#about" class="hover:opacity-70 transition">ABOUT</a>
-            <a href="#contact" class="hover:opacity-70 transition">CONTACT</a>
-        </div>
-    </nav>
+<!-- Floating Bottom Navigation Menu -->
+<nav class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-[#111111]/90 backdrop-blur-md px-6 py-3 rounded-full shadow-2xl border border-white/10">
+    <div class="flex space-x-8 text-xs font-medium tracking-widest text-gray-400">
+        <a href="#hero" class="hover:text-white transition duration-300">HOME</a>
+        <a href="#journey" class="hover:text-white transition duration-300">JOURNEY</a>
+        <a href="#portfolio" class="hover:text-white transition duration-300">PORTFOLIO</a>
+        <a href="#contact" class="hover:text-white transition duration-300">CONTACT</a>
+    </div>
+</nav>
 
-    <!-- Hero Section -->
-    <section class="relative h-screen w-full flex flex-col justify-center items-center text-center bg-black overflow-hidden px-4">
-        <!-- Background Video Placeholder (Replace source URL with your actual showreel loop) -->
-        <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover opacity-60">
-            <source src="https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-lights-background-loop-42205-large.mp4" type="video/mp4">
-        </video>
-        
-        <div class="relative z-10 max-w-4xl animate-fade-in">
-            <h1 class="text-5xl md:text-8xl font-bold tracking-tighter text-white mb-6">
-                SAJIN ASOKAN
-            </h1>
-            <p class="text-lg md:text-2xl font-light tracking-wide text-gray-300">
-                Creative Director &bull; AI Visual Artist &bull; Illustrator
+<!-- Full Screen Video Hero Section -->
+<section id="hero" class="relative h-screen w-full flex flex-col justify-center items-center text-center bg-black overflow-hidden px-4">
+    <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover opacity-60 bg-zoom">
+        <source src="banners/showreel.mp4" type="video/mp4">
+    </video>
+    <div class="relative z-10 max-w-4xl reveal">
+        <h1 class="text-5xl md:text-8xl font-bold tracking-tighter text-white mb-6 reveal">SAJIN ASOKAN</h1>
+        <p class="text-lg md:text-2xl font-light tracking-wide text-gray-300 uppercase reveal" style="transition-delay:0.15s">Creative Direction &bull; Illustration &bull; Visual Storytelling</p>
+    </div>
+</section>
+
+<!-- Journey Section -->
+<section id="journey" class="min-h-screen flex items-center bg-[#111111] text-white px-6 md:px-12 w-full py-24">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-12 lg:gap-8">
+        <div class="flex-1 min-w-[320px] max-w-xl reveal">
+            <div class="text-white mb-6 select-none uppercase font-bold">
+                <span class="text-xs md:text-sm tracking-wide text-gray-500 block mb-1">A 12 year journey from</span>
+                <h2 class="text-xl sm:text-2xl md:text-3xl tracking-tight text-white block leading-tight whitespace-nowrap">Pencils to Pixels to Prompts</h2>
+            </div>
+            <p class="text-xs md:text-sm text-gray-300 font-light leading-relaxed tracking-wide space-y-2 max-w-lg">
+                <span class="block">Over a decade of creative journey has taught me to move with changing times, transitioning from traditional drawing to digital screens, and now to directing with prompts, learning along the way.</span>
+                <span class="block mt-3">Different mediums, same creative instinct.</span>
             </p>
-        </div>
-
-        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-10 text-white animate-bounce text-sm tracking-widest opacity-60">
-            ↓ SCROLL
-        </div>
-    </section>
-
-    <!-- Evolution Section -->
-    <section id="about" class="py-24 md:py-36 px-6 md:px-12 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-        <div class="reveal">
-            <h2 class="text-xs font-bold tracking-widest text-gray-400 uppercase mb-6">THE EVOLUTION</h2>
-            <p class="text-xl md:text-2xl leading-relaxed text-gray-800 font-light mb-6">
-                I've worked across games, education, illustration, UI and creative direction, picking up a different way of thinking in each. None of those experiences stand alone—they come together in every project I create.
-            </p>
-            <p class="text-xl md:text-2xl leading-relaxed text-gray-800 font-light">
-                Today, AI is the medium that lets me bring those years of experience together to create cinematic visual stories.
-            </p>
-        </div>
-        <div class="reveal flex justify-center md:justify-end">
-            <!-- Replace with actual portrait image path later -->
-            <div class="w-80 h-96 bg-gray-200 rounded shadow-sm overflow-hidden relative group">
-                <div class="absolute inset-0 bg-gray-300 flex items-center justify-center text-gray-500 text-sm">PORTRAIT PLACEHOLDER</div>
+            <div class="flex flex-wrap items-center gap-6 mt-6">
+                <a href="https://www.atlasmission.com/" target="_blank" rel="noopener noreferrer"><img src="companies/comp_1.png" alt="Company 1" class="h-12 md:h-14 w-auto opacity-80 hover:opacity-100 hover:scale-[1.4] transition-transform transition-opacity duration-300"></a>
+                <a href="https://wildbeez.com/" target="_blank" rel="noopener noreferrer"><img src="companies/comp_2.png" alt="Company 2" class="h-12 md:h-14 w-auto opacity-80 hover:opacity-100 hover:scale-[1.4] transition-transform transition-opacity duration-300"></a>
+                <a href="https://www.playosmo.com/" target="_blank" rel="noopener noreferrer"><img src="companies/comp_3.png" alt="Company 3" class="h-12 md:h-14 w-auto opacity-80 hover:opacity-100 hover:scale-[1.4] transition-transform transition-opacity duration-300"></a>
+                <a href="https://play.google.com/store/apps/details?id=com.byjus.thelearningapp&hl=en_IN" target="_blank" rel="noopener noreferrer"><img src="companies/comp_4.png" alt="Company 4" class="h-12 md:h-14 w-auto opacity-80 hover:opacity-100 hover:scale-[1.4] transition-transform transition-opacity duration-300"></a>
+                <a href="https://pocketfm.com/" target="_blank" rel="noopener noreferrer"><img src="companies/comp_5.png" alt="Company 5" class="h-12 md:h-14 w-auto opacity-80 hover:opacity-100 hover:scale-[1.4] transition-transform transition-opacity duration-300"></a>
             </div>
         </div>
-    </section>
-
-    <!-- Selected Work Section -->
-    <section id="work" class="py-24 bg-white px-6 md:px-12 w-full">
-        <div class="max-w-7xl mx-auto">
-            <h2 class="text-xs font-bold tracking-widest text-gray-400 uppercase mb-12 reveal">SELECTED WORK</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Card 1: AI Showcase -->
-                <div class="reveal group block cursor-pointer">
-                    <div class="aspect-[4/5] bg-gray-100 mb-4 overflow-hidden rounded relative transition-all duration-500 border border-gray-100 group-hover:border-gray-300">
-                        <div class="absolute inset-0 bg-gray-200 flex items-center justify-center text-gray-400">AI VISUAL WORK</div>
-                        <!-- <img src="your-image.jpg" class="object-cover w-full h-full transition duration-700 group-hover:scale-105" /> -->
-                    </div>
-                    <h3 class="text-lg font-medium tracking-tight group-hover:translate-y-[-2px] transition-transform duration-300">AI SHOWCASE</h3>
-                </div>
-
-                <!-- Card 2: 2D Art -->
-                <div class="reveal group block cursor-pointer">
-                    <div class="aspect-[4/5] bg-gray-100 mb-4 overflow-hidden rounded relative transition-all duration-500 border border-gray-100 group-hover:border-gray-300">
-                        <div class="absolute inset-0 bg-gray-200 flex items-center justify-center text-gray-400">2D ARTWORK</div>
-                    </div>
-                    <h3 class="text-lg font-medium tracking-tight group-hover:translate-y-[-2px] transition-transform duration-300">2D ART</h3>
-                </div>
-
-                <!-- Card 3: UI Design -->
-                <div class="reveal group block cursor-pointer">
-                    <div class="aspect-[4/5] bg-gray-100 mb-4 overflow-hidden rounded relative transition-all duration-500 border border-gray-100 group-hover:border-gray-300">
-                        <div class="absolute inset-0 bg-gray-200 flex items-center justify-center text-gray-400">UI SAMPLES</div>
-                    </div>
-                    <h3 class="text-lg font-medium tracking-tight group-hover:translate-y-[-2px] transition-transform duration-300">UI DESIGN</h3>
+        <div class="flex justify-center items-center flex-shrink-0 mx-auto reveal" style="transition-delay:0.15s">
+            <div id="gallery-to-portfolio" class="gallery-container w-full aspect-square min-w-[280px] sm:w-[340px] md:w-[360px] bg-neutral-900 rounded-[2rem] overflow-hidden relative border border-white/10 shadow-2xl flex items-center group cursor-pointer">
+                <div id="scroll-track" class="absolute inset-0"></div>
+                <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-[#0A0A0A]/90 backdrop-blur-md px-5 py-2 rounded-full border border-white/10 shadow-lg flex items-center space-x-2 text-xs font-medium tracking-widest text-white whitespace-nowrap pointer-events-none transition duration-300 group-hover:bg-white group-hover:text-black group-hover:border-white">
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse group-hover:bg-black"></span>
+                    <span>GALLERY</span>
                 </div>
             </div>
         </div>
-    </section>
-
-    <!-- Companies Section -->
-    <section class="py-20 px-6 md:px-12 max-w-7xl mx-auto text-center">
-        <h2 class="text-xs font-bold tracking-widest text-gray-400 uppercase mb-8 reveal">WORKED WITH</h2>
-        <div class="reveal flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-40">
-            <span class="text-xl font-bold tracking-tight hover:opacity-100 transition duration-300 cursor-default">Pocket FM</span>
-            <span class="text-xl font-bold tracking-tight hover:opacity-100 transition duration-300 cursor-default">BYJU'S</span>
-            <span class="text-xl font-bold tracking-tight hover:opacity-100 transition duration-300 cursor-default">Juego Studios</span>
-            <span class="text-xl font-bold tracking-tight hover:opacity-100 transition duration-300 cursor-default">Juspay</span>
-            <span class="text-xl font-bold tracking-tight hover:opacity-100 transition duration-300 cursor-default">Aten</span>
-            <span class="text-xl font-bold tracking-tight hover:opacity-100 transition duration-300 cursor-default">Learning Yogi</span>
-        </div>
-    </section>
-
-    <!-- Contact Section -->
-    <section id="contact" class="py-24 md:py-36 bg-[#111111] text-white px-6 md:px-12 text-center w-full">
-        <div class="max-w-4xl mx-auto reveal">
-            <h2 class="text-2xl md:text-4xl font-light tracking-tight mb-8">Let's create something meaningful.</h2>
-            <a href="mailto:hello@sajinasokan.com" class="text-xl md:text-2xl font-medium underline underline-offset-8 decoration-gray-600 hover:decoration-white transition mb-12 block">
-                hello@sajinasokan.com
-            </a>
-            <div class="flex justify-center space-x-8 text-sm tracking-wider text-gray-400">
-                <a href="#" class="hover:text-white transition">LINKEDIN</a>
-                <a href="#" class="hover:text-white transition">RESUME</a>
-                <a href="#" class="hover:text-white transition">YOUTUBE</a>
+        <div class="space-y-4 w-full sm:w-[360px] md:w-[380px] flex-shrink-0 mx-auto reveal" style="transition-delay:0.3s">
+            <div class="bg-[#161616] border border-white/5 rounded-2xl p-6 shadow-xl flex flex-col items-start">
+                <div class="flex items-center space-x-3 mb-4"><div class="text-gray-400"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg></div><h3 class="text-base font-semibold tracking-tight text-white">Pencil</h3></div>
+                <div class="flex flex-wrap gap-2"><span class="text-xs bg-white/5 text-gray-300 px-3 py-1.5 rounded-md border border-white/5 font-light">Storyboarding</span><span class="text-xs bg-white/5 text-gray-300 px-3 py-1.5 rounded-md border border-white/5 font-light">Concept Art</span></div>
+            </div>
+            <div class="bg-[#161616] border border-white/5 rounded-2xl p-6 shadow-xl flex flex-col items-start">
+                <div class="flex items-center space-x-3 mb-4"><div class="text-gray-400"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg></div><h3 class="text-base font-semibold tracking-tight text-white">Pixel</h3></div>
+                <div class="flex flex-wrap gap-2"><span class="text-xs bg-white/5 text-gray-300 px-3 py-1.5 rounded-md border border-white/5 font-light">Photoshop</span><span class="text-xs bg-white/5 text-gray-300 px-3 py-1.5 rounded-md border border-white/5 font-light">After Effects</span><span class="text-xs bg-white/5 text-gray-300 px-3 py-1.5 rounded-md border border-white/5 font-light">Figma</span></div>
+            </div>
+            <div class="bg-[#161616] border border-white/5 rounded-2xl p-6 shadow-xl flex flex-col items-start">
+                <div class="flex items-center space-x-3 mb-4"><div class="text-gray-400"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" /></svg></div><h3 class="text-base font-semibold tracking-tight text-white">Prompt</h3></div>
+                <div class="flex flex-wrap gap-2"><span class="text-xs bg-white/5 text-gray-300 px-3 py-1.5 rounded-md border border-white/5 font-light">Kling</span><span class="text-xs bg-white/5 text-gray-300 px-3 py-1.5 rounded-md border border-white/5 font-light">Seedream</span><span class="text-xs bg-white/5 text-gray-300 px-3 py-1.5 rounded-md border border-white/5 font-light">Hailuo</span></div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Logic for dynamic navbar styles & scroll reveals -->
-    <script>
-        const navbar = document.getElementById('navbar');
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 100) {
-                navbar.classList.add('bg-[#F8F8F6]', 'text-[#111111]', 'shadow-sm', 'py-4');
-                navbar.classList.remove('text-white', 'py-6');
-            } else {
-                navbar.classList.add('text-white', 'py-6');
-                navbar.classList.remove('bg-[#F8F8F6]', 'text-[#111111]', 'shadow-sm', 'py-4');
+<!-- Portfolio Grid -->
+<section id="portfolio" class="w-full min-h-screen grid grid-cols-1 md:grid-cols-2 bg-black">
+    <div id="card-2d-art" class="relative w-full h-full group overflow-hidden border border-white/5 flex flex-col justify-center items-center cursor-pointer p-8 text-center reveal">
+        <div class="absolute inset-0 bg-cover bg-center opacity-40 group-hover:opacity-70 group-hover:blur-md transition-all duration-700 animate-cinematic" style="background-image: url('banners/banner_2d.jpg');"></div>
+        <h2 class="relative z-10 text-3xl font-bold tracking-tighter uppercase text-white group-hover:hidden">2D Art</h2>
+        <p class="relative z-10 hidden group-hover:block text-lg text-white font-light italic">Original illustrations and concept art.</p>
+    </div>
+    <div id="card-ai-showcase" class="relative w-full h-full group overflow-hidden border border-white/5 flex flex-col justify-center items-center cursor-pointer p-8 text-center reveal" style="transition-delay:0.1s">
+        <div class="absolute inset-0 bg-cover bg-center opacity-40 group-hover:opacity-70 group-hover:blur-md transition-all duration-700 animate-cinematic" style="background-image: url('banners/banner_ai.jpg');"></div>
+        <h2 class="relative z-10 text-3xl font-bold tracking-tighter uppercase text-white group-hover:hidden">AI Showcase</h2>
+        <p class="relative z-10 hidden group-hover:block text-lg text-white font-light italic">Explorations in generative video workflows.</p>
+    </div>
+    <div id="card-ui-design" class="relative w-full h-full group overflow-hidden border border-white/5 flex flex-col justify-center items-center cursor-pointer p-8 text-center reveal" style="transition-delay:0.2s">
+        <div class="absolute inset-0 bg-cover bg-center opacity-40 group-hover:opacity-70 group-hover:blur-md transition-all duration-700 animate-cinematic" style="background-image: url('banners/banner_ui.jpg');"></div>
+        <h2 class="relative z-10 text-3xl font-bold tracking-tighter uppercase text-white group-hover:hidden">UI Design</h2>
+        <p class="relative z-10 hidden group-hover:block text-lg text-white font-light italic">Functional interfaces for games and apps.</p>
+    </div>
+    <div id="card-channel" class="relative w-full h-full group overflow-hidden border border-white/5 flex flex-col justify-center items-center cursor-pointer p-8 text-center reveal" style="transition-delay:0.3s">
+        <div class="absolute inset-0 bg-cover bg-center opacity-40 group-hover:opacity-70 group-hover:blur-md transition-all duration-700 animate-cinematic" style="background-image: url('banners/banner_yt.jpg');"></div>
+        <div class="relative z-10 flex items-center gap-3 text-white group-hover:hidden">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            <h2 class="text-3xl font-bold tracking-tighter uppercase">Channel</h2>
+        </div>
+        <p class="relative z-10 hidden group-hover:block text-lg text-white font-light italic">My personal channel featuring 2D animated stories.</p>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section id="contact" class="min-h-screen flex flex-col justify-center bg-[#111111] text-white px-6 md:px-12 text-center w-full py-24">
+    <div class="reveal">
+    <h2 class="text-3xl md:text-5xl font-light tracking-tight mb-16 uppercase">DROP A LINE<span class="blink-cursor">_</span></h2>
+    <div class="flex justify-center items-center gap-12 md:gap-16">
+        <a href="mailto:cloudno44@gmail.com" class="contact-icon relative flex flex-col items-center text-gray-400 hover:text-white transition duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 md:w-9 md:h-9">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+            </svg>
+            <span class="contact-icon-label text-xs tracking-widest uppercase text-gray-400">Mail me</span>
+        </a>
+        <a href="https://www.linkedin.com/in/cloudno44" target="_blank" rel="noopener noreferrer" class="contact-icon relative flex flex-col items-center text-gray-400 hover:text-white transition duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 md:w-9 md:h-9">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 11.001-4.124 2.062 2.062 0 010 4.124zM7.114 20.452H3.558V9h3.556v11.452z"/>
+            </svg>
+            <span class="contact-icon-label text-xs tracking-widest uppercase text-gray-400">Find me on LinkedIn</span>
+        </a>
+        <a href="extra/sajincv.pdf" target="_blank" rel="noopener noreferrer" class="contact-icon relative flex flex-col items-center text-gray-400 hover:text-white transition duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 md:w-9 md:h-9">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3-14.235v5.234a1 1 0 001 1h5.234M19.5 8.25V18a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 18V6a2.25 2.25 0 012.25-2.25h6.75z" />
+            </svg>
+            <span class="contact-icon-label text-xs tracking-widest uppercase text-gray-400">Download my CV</span>
+        </a>
+    </div>
+    </div>
+</section>
+
+<!-- 2D Art Gallery Overlay -->
+<div id="gallery-2d-overlay" data-lenis-prevent>
+    <div class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-6 md:px-12 py-6 bg-gradient-to-b from-black/80 to-transparent">
+        <span id="gallery-2d-close" class="text-xs tracking-widest text-gray-400 hover:text-white transition cursor-pointer">&larr; BACK</span>
+        <h2 class="text-sm tracking-widest uppercase text-white">2D Art</h2>
+        <span class="w-10"></span>
+    </div>
+    <div class="pt-28 md:pt-32 px-4 md:px-8 pb-16 max-w-7xl mx-auto">
+        <div class="masonry" id="gallery-2d-grid"></div>
+    </div>
+</div>
+
+<!-- UI Design Gallery Overlay -->
+<div id="gallery-ui-overlay" data-lenis-prevent>
+    <div class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-6 md:px-12 py-6 bg-gradient-to-b from-black/80 to-transparent">
+        <span id="gallery-ui-close" class="text-xs tracking-widest text-gray-400 hover:text-white transition cursor-pointer">&larr; BACK</span>
+        <h2 class="text-sm tracking-widest uppercase text-white">UI Design</h2>
+        <span class="w-10"></span>
+    </div>
+    <div class="pt-28 md:pt-32 px-4 md:px-8 pb-16 max-w-7xl mx-auto">
+        <div class="masonry" id="gallery-ui-grid"></div>
+    </div>
+</div>
+
+<!-- AI Showcase Video Overlay -->
+<div id="gallery-ai-overlay" data-lenis-prevent>
+    <div class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-6 md:px-12 py-6 bg-gradient-to-b from-black/80 to-transparent">
+        <span id="gallery-ai-close" class="text-xs tracking-widest text-gray-400 hover:text-white transition cursor-pointer">&larr; BACK</span>
+        <h2 class="text-sm tracking-widest uppercase text-white">AI Showcase</h2>
+        <span class="w-10"></span>
+    </div>
+    <div class="pt-28 md:pt-32 px-4 md:px-8 pb-16 max-w-7xl mx-auto">
+        <div class="video-grid" id="gallery-ai-grid"></div>
+    </div>
+</div>
+
+<!-- Channel Video Overlay -->
+<div id="gallery-channel-overlay" data-lenis-prevent>
+    <div class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-6 md:px-12 py-6 bg-gradient-to-b from-black/80 to-transparent">
+        <span id="gallery-channel-close" class="text-xs tracking-widest text-gray-400 hover:text-white transition cursor-pointer">&larr; BACK</span>
+        <h2 class="text-sm tracking-widest uppercase text-white">Channel</h2>
+        <span class="w-10"></span>
+    </div>
+    <div class="pt-28 md:pt-32 px-4 md:px-8 pb-16 max-w-7xl mx-auto">
+        <div class="video-grid" id="gallery-channel-grid"></div>
+    </div>
+</div>
+
+<!-- Video Lightbox -->
+<div id="video-lightbox">
+    <span id="vlb-close">&times;</span>
+    <div id="vlb-frame-wrap">
+        <div id="vlb-player"></div>
+    </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox">
+    <span id="lb-close">&times;</span>
+    <span class="lb-btn" id="lb-prev" style="left: 1rem;">&#8249;</span>
+    <img id="lb-img" src="" alt="">
+    <span class="lb-btn" id="lb-next" style="right: 1rem;">&#8250;</span>
+</div>
+
+<script>
+    const track = document.getElementById('scroll-track');
+    async function scanAndBuildCarousel() {
+        let discovered = [];
+        const extensions = ['jpg', 'gif', 'mp4'];
+
+        function imageExists(url) {
+            return new Promise(r => {
+                const img = new Image();
+                img.onload = () => r(true);
+                img.onerror = () => r(false);
+                img.src = url;
+            });
+        }
+
+        function videoExists(url) {
+            return new Promise(r => {
+                const vid = document.createElement('video');
+                vid.onloadedmetadata = () => r(true);
+                vid.onerror = () => r(false);
+                vid.src = url;
+            });
+        }
+
+        async function fileExists(url, ext) {
+            return ext === 'mp4' ? videoExists(url) : imageExists(url);
+        }
+
+        for (let i = 1; i <= 25; i++) {
+            let found = null;
+            for (const ext of extensions) {
+                const url = `slideshow/${i}.${ext}`;
+                if (await fileExists(url, ext)) { found = url; break; }
+            }
+            if (found) discovered.push(found); else break;
+        }
+        if (discovered.length === 0) {
+            discovered = [
+                "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?q=80&w=600&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1604871000636-074fa5117945?q=80&w=600&auto=format&fit=crop"
+            ];
+        }
+        track.innerHTML = discovered.map((src, i) => {
+            const inner = src.endsWith('.mp4')
+                ? `<video src="${src}" autoplay muted loop playsinline></video>`
+                : `<img src="${src}" alt="" />`;
+            return `<div class="stack-item" data-i="${i}">${inner}</div>`;
+        }).join('');
+
+        const items = Array.from(track.children);
+
+        const CAP_MS = 8000;
+        const DEFAULT_MS = 3000;
+        const durations = items.map(() => DEFAULT_MS);
+
+        items.forEach((el, i) => {
+            const vid = el.querySelector('video');
+            if (vid) {
+                vid.addEventListener('loadedmetadata', () => {
+                    durations[i] = Math.min(vid.duration * 1000, CAP_MS);
+                });
             }
         });
 
-        const reveals = document.querySelectorAll('.reveal');
-        const revealOnScroll = () => {
-            reveals.forEach(el => {
-                const windowHeight = window.innerHeight;
-                const elementTop = el.getBoundingClientRect().top;
-                if (elementTop < windowHeight - 100) {
-                    el.classList.add('active');
+        let order = items.map((_, i) => i);
+
+        function renderStack() {
+            order.forEach((mediaIndex, pos) => {
+                const el = items[mediaIndex];
+                if (pos === 0) {
+                    el.style.transform = 'translateY(0) scale(1) rotate(0)';
+                    el.style.opacity = '1';
+                    el.style.zIndex = 20;
+                    el.style.display = 'block';
+                } else if (pos === 1) {
+                    el.style.transform = 'translateY(0) scale(1) rotate(0)';
+                    el.style.opacity = '1';
+                    el.style.zIndex = 10;
+                    el.style.display = 'block';
+                } else {
+                    el.style.display = 'none';
                 }
             });
-        };
-        window.addEventListener('scroll', revealOnScroll);
-        window.addEventListener('load', revealOnScroll);
-    </script>
+        }
+        renderStack();
+
+        if (items.length > 1) {
+            function scheduleNext() {
+                const frontIndex = order[0];
+                setTimeout(() => {
+                    const front = items[frontIndex];
+                    front.classList.add('exit');
+                    setTimeout(() => {
+                        front.classList.remove('exit');
+                        order.push(order.shift());
+                        renderStack();
+                        scheduleNext();
+                    }, 600);
+                }, durations[frontIndex]);
+            }
+            scheduleNext();
+        }
+    }
+    scanAndBuildCarousel();
+
+    // Reveal content + zoom backgrounds as each section becomes active
+    const sectionObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            entry.target.classList.toggle('in-view', entry.isIntersecting);
+        });
+    }, { threshold: 0.55 });
+    document.querySelectorAll('section').forEach(sec => sectionObserver.observe(sec));
+
+    // Smooth inertia scrolling
+    const lenis = new Lenis({
+        duration: 1.1,
+        easing: t => Math.min(1, 1 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+        wheelMultiplier: 1,
+        touchMultiplier: 1.5
+    });
+
+    function raf(time) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
+    // Snap to nearest section once scrolling settles (no external plugin — self-contained)
+    const sections = Array.from(document.querySelectorAll('section'));
+    let snapTimer = null;
+    let isAnimatingSnap = false;
+
+    function nearestSection() {
+        const mid = window.scrollY + window.innerHeight / 2;
+        let closest = sections[0];
+        let minDist = Infinity;
+        sections.forEach(sec => {
+            const secMid = sec.offsetTop + sec.offsetHeight / 2;
+            const dist = Math.abs(secMid - mid);
+            if (dist < minDist) { minDist = dist; closest = sec; }
+        });
+        return closest;
+    }
+
+    lenis.on('scroll', () => {
+        if (isAnimatingSnap) return;
+        clearTimeout(snapTimer);
+        snapTimer = setTimeout(() => {
+            isAnimatingSnap = true;
+            lenis.scrollTo(nearestSection(), {
+                duration: 1.0,
+                easing: t => 1 - Math.pow(1 - t, 3)
+            });
+            setTimeout(() => { isAnimatingSnap = false; }, 1100);
+        }, 130);
+    });
+
+    // Trigger rise/fade + background zoom when a section becomes active
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            entry.target.classList.toggle('in-view', entry.isIntersecting);
+        });
+    }, { threshold: 0.55 });
+    document.querySelectorAll('section').forEach(sec => revealObserver.observe(sec));
+
+    // Nav links use the same smooth engine
+    document.querySelectorAll('nav a').forEach(link => {
+        link.addEventListener('click', e => {
+            e.preventDefault();
+            const target = document.querySelector(link.getAttribute('href'));
+            lenis.scrollTo(target, {
+                duration: 1.2,
+                easing: t => 1 - Math.pow(1 - t, 3)
+            });
+        });
+    });
+
+    // Gallery button jumps to the Portfolio section
+    document.getElementById('gallery-to-portfolio').addEventListener('click', () => {
+        lenis.scrollTo(document.getElementById('portfolio'), {
+            duration: 1.2,
+            easing: t => 1 - Math.pow(1 - t, 3)
+        });
+    });
+
+    /* ============================================================
+       PORTFOLIO GALLERIES
+       Each gallery auto-scans its folder (next to this index.html)
+       for files named 1, 2, 3... in order. Accepts .jpg or .jpeg.
+       Add or remove numbered files in that folder and the gallery
+       updates itself — no code changes needed. Stops at the first
+       missing number, so keep the numbering sequential, no gaps.
+
+       2D Art  -> Gallery/2d/1.jpg, 2.jpg, ...
+       UI Design -> Gallery/ui/1.jpg, 2.jpg, ...
+       ============================================================ */
+
+    const lightbox = document.getElementById('lightbox');
+    const lbImg = document.getElementById('lb-img');
+    let currentImages = [];
+    let lbIndex = 0;
+
+    function openLightbox(list, i) {
+        currentImages = list;
+        lbIndex = i;
+        lbImg.src = currentImages[lbIndex];
+        lightbox.classList.add('active');
+    }
+    function closeLightbox() { lightbox.classList.remove('active'); }
+    function showNext(dir) {
+        lbIndex = (lbIndex + dir + currentImages.length) % currentImages.length;
+        lbImg.src = currentImages[lbIndex];
+    }
+    document.getElementById('lb-close').addEventListener('click', closeLightbox);
+    document.getElementById('lb-prev').addEventListener('click', () => showNext(-1));
+    document.getElementById('lb-next').addEventListener('click', () => showNext(1));
+    lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+
+    function fileExists(url) {
+        return new Promise(resolve => {
+            const img = new Image();
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+            img.src = url;
+        });
+    }
+
+    function setupGallery({ folder, cardId, overlayId, closeId, gridId }) {
+        const images = [];
+        const overlay = document.getElementById(overlayId);
+        const grid = document.getElementById(gridId);
+
+        async function scan() {
+            const extensions = ['jpg', 'jpeg'];
+            for (let i = 1; i <= 100; i++) {
+                let found = null;
+                for (const ext of extensions) {
+                    const url = `${folder}/${i}.${ext}`;
+                    if (await fileExists(url)) { found = url; break; }
+                }
+                if (found) images.push(found); else break;
+            }
+            grid.innerHTML = images.map((src, i) =>
+                `<div class="masonry-item" data-index="${i}"><img src="${src}" loading="lazy" alt=""></div>`
+            ).join('');
+        }
+        scan();
+
+        document.getElementById(cardId).addEventListener('click', () => {
+            overlay.classList.add('active');
+            lenis.stop();
+        });
+        document.getElementById(closeId).addEventListener('click', () => {
+            overlay.classList.remove('active');
+            lenis.start();
+        });
+        grid.addEventListener('click', e => {
+            const item = e.target.closest('.masonry-item');
+            if (item) openLightbox(images, parseInt(item.dataset.index));
+        });
+        document.addEventListener('keydown', e => {
+            if (overlay.classList.contains('active') && !lightbox.classList.contains('active') && e.key === 'Escape') {
+                overlay.classList.remove('active');
+                lenis.start();
+            }
+        });
+    }
+
+    document.addEventListener('keydown', e => {
+        if (lightbox.classList.contains('active')) {
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') showNext(-1);
+            if (e.key === 'ArrowRight') showNext(1);
+        }
+    });
+
+    setupGallery({
+        folder: 'Gallery/2d',
+        cardId: 'card-2d-art',
+        overlayId: 'gallery-2d-overlay',
+        closeId: 'gallery-2d-close',
+        gridId: 'gallery-2d-grid'
+    });
+
+    setupGallery({
+        folder: 'Gallery/ui',
+        cardId: 'card-ui-design',
+        overlayId: 'gallery-ui-overlay',
+        closeId: 'gallery-ui-close',
+        gridId: 'gallery-ui-grid'
+    });
+
+    /* ============================================================
+       VIDEO GALLERIES (AI Showcase / Channel)
+       Add YouTube links below, one per line. Full URLs or plain
+       video IDs both work. Thumbnails are pulled automatically
+       from YouTube — nothing to upload. Add or remove a line any
+       time you want to add/remove a video.
+       ============================================================ */
+    const aiShowcaseVideos = [
+        "https://youtu.be/E5ZRHKfMdi0?si=Id2wnHKl7i-Og7i7",
+        "https://youtu.be/1erVnmu6cbQ?si=b3KTsBKBz31UXej6",
+        "https://youtu.be/eL_i6fPfJd4?si=acoc4chSk2r1HIeo"
+    ];
+    const channelVideos = [
+        "https://youtu.be/FK5eqiCxkPo?si=c1P4qnCgE2VWLSef",
+        "https://youtu.be/BDGvRRriqCk?si=jxwDwGqx9rLBjiZ8",
+        "https://youtu.be/q1LZVr8_ptc?si=qpDrCtJWM_jEzrb5",
+        "https://youtu.be/DVzdIL6_5uk?si=yuGprpko9Tzm8ve1",
+        "https://youtu.be/gz7T_qEyxpM?si=xj7i2AK-6tdQID2x",
+        "https://youtu.be/HffTh3S8w40?si=NJN5cyTkVteGJTwQ"
+    ];
+
+    function extractYouTubeId(input) {
+        const s = input.trim();
+        const patterns = [
+            /(?:youtube\.com\/watch\?v=)([\w-]+)/,
+            /(?:youtu\.be\/)([\w-]+)/,
+            /(?:youtube\.com\/embed\/)([\w-]+)/,
+            /(?:youtube\.com\/shorts\/)([\w-]+)/
+        ];
+        for (const p of patterns) {
+            const m = s.match(p);
+            if (m) return m[1];
+        }
+        return s; // assume it's already a plain video ID
+    }
+
+    // Load YouTube's player API so we can detect embed-disabled videos
+    // and fall back to opening them on YouTube instead of showing an error.
+    let ytApiReady = false;
+    let pendingPlay = null;
+    window.onYouTubeIframeAPIReady = function () {
+        ytApiReady = true;
+        if (pendingPlay) { playVideo(pendingPlay.id, pendingPlay.url); pendingPlay = null; }
+    };
+    const ytApiTag = document.createElement('script');
+    ytApiTag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(ytApiTag);
+
+    const videoLightbox = document.getElementById('video-lightbox');
+    let ytPlayer = null;
+
+    function playVideo(id, fallbackUrl) {
+        if (!ytApiReady) { pendingPlay = { id, url: fallbackUrl }; return; }
+        videoLightbox.classList.add('active');
+        if (ytPlayer) { ytPlayer.destroy(); }
+        ytPlayer = new YT.Player('vlb-player', {
+            videoId: id,
+            playerVars: { autoplay: 1, rel: 0 },
+            events: {
+                onError: function () {
+                    closeVideoLightbox();
+                    window.open(fallbackUrl, '_blank');
+                }
+            }
+        });
+    }
+    function closeVideoLightbox() {
+        videoLightbox.classList.remove('active');
+        if (ytPlayer) { ytPlayer.destroy(); ytPlayer = null; }
+    }
+    document.getElementById('vlb-close').addEventListener('click', closeVideoLightbox);
+    videoLightbox.addEventListener('click', e => { if (e.target === videoLightbox) closeVideoLightbox(); });
+
+    function setupVideoGallery({ videos, cardId, overlayId, closeId, gridId }) {
+        const items = videos.map(url => ({ id: extractYouTubeId(url), url }));
+        const overlay = document.getElementById(overlayId);
+        const grid = document.getElementById(gridId);
+
+        grid.innerHTML = items.map(({ id, url }) => `
+            <div class="video-item" data-id="${id}" data-url="${url}">
+                <img src="https://img.youtube.com/vi/${id}/hqdefault.jpg" loading="lazy" alt="">
+                <div class="play-btn">
+                    <svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+            </div>
+        `).join('');
+
+        document.getElementById(cardId).addEventListener('click', () => {
+            overlay.classList.add('active');
+            lenis.stop();
+        });
+        document.getElementById(closeId).addEventListener('click', () => {
+            overlay.classList.remove('active');
+            lenis.start();
+        });
+        grid.addEventListener('click', e => {
+            const item = e.target.closest('.video-item');
+            if (item) playVideo(item.dataset.id, item.dataset.url);
+        });
+        document.addEventListener('keydown', e => {
+            if (overlay.classList.contains('active') && !videoLightbox.classList.contains('active') && e.key === 'Escape') {
+                overlay.classList.remove('active');
+                lenis.start();
+            }
+        });
+    }
+
+    document.addEventListener('keydown', e => {
+        if (videoLightbox.classList.contains('active') && e.key === 'Escape') closeVideoLightbox();
+    });
+
+    setupVideoGallery({
+        videos: aiShowcaseVideos,
+        cardId: 'card-ai-showcase',
+        overlayId: 'gallery-ai-overlay',
+        closeId: 'gallery-ai-close',
+        gridId: 'gallery-ai-grid'
+    });
+
+    setupVideoGallery({
+        videos: channelVideos,
+        cardId: 'card-channel',
+        overlayId: 'gallery-channel-overlay',
+        closeId: 'gallery-channel-close',
+        gridId: 'gallery-channel-grid'
+    });
+</script>
 </body>
 </html>
