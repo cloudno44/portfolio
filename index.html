@@ -599,50 +599,70 @@
     }, { threshold: 0.55 });
     document.querySelectorAll('section').forEach(sec => sectionObserver.observe(sec));
 
-    // Smooth inertia scrolling
-    const lenis = new Lenis({
-        duration: 1.1,
-        easing: t => Math.min(1, 1 - Math.pow(2, -10 * t)),
-        smoothWheel: true,
-        wheelMultiplier: 1,
-        touchMultiplier: 1.5
-    });
+    // Smooth inertia scrolling — desktop/laptop only.
+    // Phones use native scrolling instead: Lenis's custom snap logic
+    // doesn't play well with touch scrolling and can leave the page
+    // stuck between sections. This keeps desktop behavior unchanged.
+    const isDesktopScroll = window.matchMedia('(min-width: 769px) and (hover: hover) and (pointer: fine)').matches;
 
-    function raf(time) {
-        lenis.raf(time);
-        requestAnimationFrame(raf);
-    }
-    requestAnimationFrame(raf);
+    let lenis;
 
-    // Snap to nearest section once scrolling settles (no external plugin — self-contained)
-    const sections = Array.from(document.querySelectorAll('section'));
-    let snapTimer = null;
-    let isAnimatingSnap = false;
-
-    function nearestSection() {
-        const mid = window.scrollY + window.innerHeight / 2;
-        let closest = sections[0];
-        let minDist = Infinity;
-        sections.forEach(sec => {
-            const secMid = sec.offsetTop + sec.offsetHeight / 2;
-            const dist = Math.abs(secMid - mid);
-            if (dist < minDist) { minDist = dist; closest = sec; }
+    if (isDesktopScroll) {
+        lenis = new Lenis({
+            duration: 1.1,
+            easing: t => Math.min(1, 1 - Math.pow(2, -10 * t)),
+            smoothWheel: true,
+            wheelMultiplier: 1,
+            touchMultiplier: 1.5
         });
-        return closest;
-    }
 
-    lenis.on('scroll', () => {
-        if (isAnimatingSnap) return;
-        clearTimeout(snapTimer);
-        snapTimer = setTimeout(() => {
-            isAnimatingSnap = true;
-            lenis.scrollTo(nearestSection(), {
-                duration: 1.0,
-                easing: t => 1 - Math.pow(1 - t, 3)
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // Snap to nearest section once scrolling settles (no external plugin — self-contained)
+        const sections = Array.from(document.querySelectorAll('section'));
+        let snapTimer = null;
+        let isAnimatingSnap = false;
+
+        function nearestSection() {
+            const mid = window.scrollY + window.innerHeight / 2;
+            let closest = sections[0];
+            let minDist = Infinity;
+            sections.forEach(sec => {
+                const secMid = sec.offsetTop + sec.offsetHeight / 2;
+                const dist = Math.abs(secMid - mid);
+                if (dist < minDist) { minDist = dist; closest = sec; }
             });
-            setTimeout(() => { isAnimatingSnap = false; }, 1100);
-        }, 130);
-    });
+            return closest;
+        }
+
+        lenis.on('scroll', () => {
+            if (isAnimatingSnap) return;
+            clearTimeout(snapTimer);
+            snapTimer = setTimeout(() => {
+                isAnimatingSnap = true;
+                lenis.scrollTo(nearestSection(), {
+                    duration: 1.0,
+                    easing: t => 1 - Math.pow(1 - t, 3)
+                });
+                setTimeout(() => { isAnimatingSnap = false; }, 1100);
+            }, 130);
+        });
+    } else {
+        // Lightweight stand-in so every other lenis.scrollTo/stop/start
+        // call elsewhere in this file keeps working unchanged on mobile.
+        lenis = {
+            scrollTo: (target, opts = {}) => {
+                const el = typeof target === 'string' ? document.querySelector(target) : target;
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: opts.block || 'start' });
+            },
+            stop: () => {},
+            start: () => {}
+        };
+    }
 
     // Trigger rise/fade + background zoom when a section becomes active
     const revealObserver = new IntersectionObserver((entries) => {
