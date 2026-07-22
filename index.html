@@ -192,6 +192,30 @@
     }
     .video-item:hover .play-btn svg { transform: scale(1.12); }
 
+    .video-item.local-thumb video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: blur(6px);
+        transform: scale(1.1);
+        transition: filter 0.4s ease;
+    }
+    .video-item.local-thumb:hover video {
+        filter: blur(3px);
+    }
+    .video-item.local-thumb .local-label {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 1.5rem;
+        letter-spacing: 0.1em;
+        text-shadow: 0 2px 12px rgba(0,0,0,0.7);
+    }
+
     #video-lightbox {
         position: fixed;
         inset: 0;
@@ -853,8 +877,9 @@
     function playVideo(id, fallbackUrl) {
         if (!ytApiReady) { pendingPlay = { id, url: fallbackUrl }; return; }
         videoLightbox.classList.add('active');
-        if (ytPlayer) { ytPlayer.destroy(); }
-        ytPlayer = new YT.Player('vlb-player', {
+        closeVideoLightbox_internal();
+        const container = document.getElementById('vlb-player');
+        ytPlayer = new YT.Player(container, {
             videoId: id,
             playerVars: { autoplay: 1, rel: 0 },
             events: {
@@ -865,26 +890,46 @@
             }
         });
     }
+    function playLocalVideo(src) {
+        videoLightbox.classList.add('active');
+        closeVideoLightbox_internal();
+        const container = document.getElementById('vlb-player');
+        container.innerHTML = `<video src="${src}" controls autoplay style="width:100%;height:100%;border-radius:0.5rem;"></video>`;
+    }
+    function closeVideoLightbox_internal() {
+        if (ytPlayer) { ytPlayer.destroy(); ytPlayer = null; }
+        const container = document.getElementById('vlb-player');
+        if (container) container.innerHTML = '';
+    }
     function closeVideoLightbox() {
         videoLightbox.classList.remove('active');
-        if (ytPlayer) { ytPlayer.destroy(); ytPlayer = null; }
+        closeVideoLightbox_internal();
     }
     document.getElementById('vlb-close').addEventListener('click', closeVideoLightbox);
     videoLightbox.addEventListener('click', e => { if (e.target === videoLightbox) closeVideoLightbox(); });
 
-    function setupVideoGallery({ videos, cardId, overlayId, closeId, gridId }) {
+    function setupVideoGallery({ videos, localVideos = [], cardId, overlayId, closeId, gridId }) {
         const items = videos.map(url => ({ id: extractYouTubeId(url), url }));
         const overlay = document.getElementById(overlayId);
         const grid = document.getElementById(gridId);
 
-        grid.innerHTML = items.map(({ id, url }) => `
-            <div class="video-item" data-id="${id}" data-url="${url}">
+        const localHtml = localVideos.map(({ file, label }) => `
+            <div class="video-item local-thumb" data-type="local" data-src="${file}">
+                <video src="${file}" muted preload="metadata"></video>
+                <div class="local-label">${label}</div>
+            </div>
+        `).join('');
+
+        const youtubeHtml = items.map(({ id, url }) => `
+            <div class="video-item" data-type="youtube" data-id="${id}" data-url="${url}">
                 <img src="https://img.youtube.com/vi/${id}/hqdefault.jpg" loading="lazy" alt="">
                 <div class="play-btn">
                     <svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
                 </div>
             </div>
         `).join('');
+
+        grid.innerHTML = localHtml + youtubeHtml;
 
         document.getElementById(cardId).addEventListener('click', () => {
             overlay.classList.add('active');
@@ -896,7 +941,12 @@
         });
         grid.addEventListener('click', e => {
             const item = e.target.closest('.video-item');
-            if (item) playVideo(item.dataset.id, item.dataset.url);
+            if (!item) return;
+            if (item.dataset.type === 'local') {
+                playLocalVideo(item.dataset.src);
+            } else {
+                playVideo(item.dataset.id, item.dataset.url);
+            }
         });
         document.addEventListener('keydown', e => {
             if (overlay.classList.contains('active') && !videoLightbox.classList.contains('active') && e.key === 'Escape') {
@@ -911,6 +961,10 @@
     });
 
     setupVideoGallery({
+        localVideos: [
+            { file: 'aishowcase/Action.mp4', label: 'ACTION' },
+            { file: 'aishowcase/Musical.mp4', label: 'MUSICAL' }
+        ],
         videos: aiShowcaseVideos,
         cardId: 'card-ai-showcase',
         overlayId: 'gallery-ai-overlay',
