@@ -192,7 +192,7 @@
     }
     .video-item:hover .play-btn svg { transform: scale(1.12); }
 
-    .video-item.local-thumb video {
+    .video-item.local-thumb img {
         width: 100%;
         height: 100%;
         object-fit: cover;
@@ -200,7 +200,7 @@
         transform: scale(1.1);
         transition: filter 0.4s ease, transform 0.4s ease;
     }
-    .video-item.local-thumb:hover video {
+    .video-item.local-thumb:hover img {
         filter: blur(1.5px) brightness(0.6);
         transform: scale(1.15);
     }
@@ -936,15 +936,18 @@
         const overlay = document.getElementById(overlayId);
         const grid = document.getElementById(gridId);
 
-        const localHtml = localVideos.map(({ file, label, subtitle }) => `
+        const localHtml = localVideos.map(({ file, label, subtitle }) => {
+            const thumb = file.replace(/\.[^/.]+$/, '.jpg');
+            return `
             <div class="video-item local-thumb" data-type="local" data-src="${file}">
-                <video src="${file}" muted preload="metadata"></video>
+                <img src="${thumb}" loading="lazy" alt="">
                 <div class="local-label">
                     <span class="label-main">${label}</span>
                     <span class="label-sub">${subtitle}</span>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
 
         const youtubeHtml = items.map(({ id, url }) => `
             <div class="video-item" data-type="youtube" data-id="${id}" data-url="${url}">
