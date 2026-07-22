@@ -198,10 +198,11 @@
         object-fit: cover;
         filter: blur(6px);
         transform: scale(1.1);
-        transition: filter 0.4s ease;
+        transition: filter 0.4s ease, transform 0.4s ease;
     }
     .video-item.local-thumb:hover video {
-        filter: blur(3px);
+        filter: blur(1.5px);
+        transform: scale(1.15);
     }
     .video-item.local-thumb .local-label {
         position: absolute;
@@ -214,7 +215,29 @@
         font-size: 1.5rem;
         letter-spacing: 0.1em;
         text-shadow: 0 2px 12px rgba(0,0,0,0.7);
+        text-align: center;
+        padding: 1rem;
+        transition: opacity 0.3s ease;
     }
+    .video-item.local-thumb .local-label .label-main {
+        transition: opacity 0.3s ease;
+    }
+    .video-item.local-thumb .local-label .label-sub {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        opacity: 0;
+        font-size: 0.9rem;
+        font-weight: 400;
+        letter-spacing: 0.05em;
+        text-transform: none;
+        line-height: 1.4;
+        transition: opacity 0.3s ease;
+    }
+    .video-item.local-thumb:hover .local-label .label-main { opacity: 0; }
+    .video-item.local-thumb:hover .local-label .label-sub { opacity: 1; }
 
     #video-lightbox {
         position: fixed;
@@ -913,10 +936,13 @@
         const overlay = document.getElementById(overlayId);
         const grid = document.getElementById(gridId);
 
-        const localHtml = localVideos.map(({ file, label }) => `
+        const localHtml = localVideos.map(({ file, label, subtitle }) => `
             <div class="video-item local-thumb" data-type="local" data-src="${file}">
                 <video src="${file}" muted preload="metadata"></video>
-                <div class="local-label">${label}</div>
+                <div class="local-label">
+                    <span class="label-main">${label}</span>
+                    <span class="label-sub">${subtitle}</span>
+                </div>
             </div>
         `).join('');
 
@@ -962,8 +988,8 @@
 
     setupVideoGallery({
         localVideos: [
-            { file: 'aishowcase/Action.mp4', label: 'ACTION' },
-            { file: 'aishowcase/Musical.mp4', label: 'MUSICAL' }
+            { file: 'aishowcase/Action.mp4', label: 'ACTION', subtitle: 'Cinematic Action Setpieces' },
+            { file: 'aishowcase/Musical.mp4', label: 'MUSICAL', subtitle: 'Musical videos featuring <br>AI-generated original songs' }
         ],
         videos: aiShowcaseVideos,
         cardId: 'card-ai-showcase',
