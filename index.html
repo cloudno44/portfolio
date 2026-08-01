@@ -316,17 +316,31 @@
         transform: scale(1.06);
     }
 
-    /* Mobile only: hero video fits by width, never crops the sides.
-       Height adjusts naturally — may letterbox or trim top/bottom
-       depending on each phone's screen shape, but width is never cut. */
+    /* Mobile only: hero fits the video's natural width/height instead of
+       forcing a fixed full-screen box. Video sits full-width at the very
+       top of the screen; the section's height simply follows the video's
+       own height, so Journey begins right where the video ends. */
     @media (max-width: 768px) {
+        #hero {
+            height: auto;
+            min-height: 0;
+            padding-left: 0;
+            padding-right: 0;
+        }
         #hero-video {
+            position: static;
             width: 100%;
             height: auto;
-            top: 50%;
-            left: 0;
-            transform: translateY(-50%);
-            object-fit: unset;
+            display: block;
+        }
+        #hero-text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0 1rem;
         }
     }
 
@@ -370,7 +384,7 @@
 <!-- Full Screen Video Hero Section -->
 <section id="hero" class="relative h-screen w-full flex flex-col justify-center items-center text-center bg-black overflow-hidden px-4">
     <video id="hero-video" autoplay muted loop playsinline poster="banners/showreel-poster.jpg" class="absolute inset-0 w-full h-full object-cover opacity-60"></video>
-    <div class="relative z-10 max-w-4xl reveal">
+    <div id="hero-text" class="relative z-10 max-w-4xl reveal">
         <h1 class="text-5xl md:text-8xl font-bold tracking-tighter text-white mb-6 reveal">SAJIN ASOKAN</h1>
         <p class="text-lg md:text-2xl font-light tracking-wide text-gray-300 uppercase reveal" style="transition-delay:0.15s">Creative Direction &bull; Illustration &bull; Visual Storytelling</p>
     </div>
