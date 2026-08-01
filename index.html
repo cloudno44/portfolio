@@ -316,6 +316,20 @@
         transform: scale(1.06);
     }
 
+    /* Mobile only: hero video fits by width, never crops the sides.
+       Height adjusts naturally — may letterbox or trim top/bottom
+       depending on each phone's screen shape, but width is never cut. */
+    @media (max-width: 768px) {
+        #hero-video {
+            width: 100%;
+            height: auto;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            object-fit: unset;
+        }
+    }
+
     /* Blinking cursor after "DROP A LINE" */
     @keyframes blinkCursor {
         0%, 50% { opacity: 1; }
